@@ -166,7 +166,7 @@ class Beam(object):
     def get_wavevector(self):
         """
         Get the wave vector. Notice that here, the wavevector is defined as
-        [0, 0, 1 / wavelength]
+        [0, 0, 2*pi / wavelength]
         :return:
         """
         return np.array([0, 0, 2 * np.pi / self.wavelength])
@@ -216,7 +216,7 @@ class Beam(object):
                     tmp = line.replace('=', ' ').split()
                     if tmp[0] == 'beam/photon_energy':
                         self.photon_energy = float(tmp[1])
-                    if tmp[0] == 'beam/photonsPerShot':
+                    if tmp[0] == 'beam/fluence':
                         self.set_photons_per_pulse(float(tmp[1]))
                     if tmp[0] == 'beam/radius':
                         self.set_focus(radius=float(tmp[1]))
