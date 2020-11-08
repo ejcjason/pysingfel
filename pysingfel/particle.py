@@ -186,9 +186,8 @@ class Particle(object):
         :return:
         """
         with h5py.File(fname, 'r') as f:
-            atom_pos = f.get(datasetname + '/r').value  # atom position -> N x 3 array
-            ion_list = f.get(
-                datasetname + '/xyz').value  # length = N, contain atom type id for each atom
+            atom_pos = f[datasetname + '/r'][()]  # atom position -> N x 3 array
+            ion_list = f[datasetname + '/xyz'][()]  # length = N, contain atom type id for each atom
             self.atom_pos = atom_pos[np.argsort(ion_list)]
             self.center_and_align_according_to_principal_axes()
             _, idx = np.unique(np.sort(ion_list), return_index=True)
@@ -671,7 +670,7 @@ class Particle(object):
         """
         Center and align the principal axes of inertia of particle to laboratory frame.
         """
-        self.get_principal_moments_and_axes()
+        self.calculate_principal_moments_and_axes()
         self.atom_pos_aligned = np.matmul(self.atom_pos_centered, self.principal_axes)
 
     def center_particle(self):
