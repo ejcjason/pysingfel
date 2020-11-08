@@ -194,18 +194,17 @@ class Particle(object):
             self.split_idx = np.append(idx, [len(ion_list)])
 
             # get atom factor table, sorted by atom type id
-            atom_type = f.get(
-                datasetname + '/T').value  # atom type array, each type is represented by an integer
+            atom_type = f[datasetname + '/T'][()]  # atom type array, each type is represented by an integer
             self.num_atom_types = len(atom_type)
-            ff_table = f.get(datasetname + '/ff').value
+            ff_table = f[datasetname + '/ff'][()]
             self.ff_table = ff_table[np.argsort(atom_type)]
 
-            self.q_sample = f.get(datasetname + '/halfQ').value
+            self.q_sample = f[datasetname + '/halfQ'][()]
             self.num_q_samples = len(self.q_sample)
-            self.compton_q_sample = f.get(datasetname + '/Sq_halfQ').value
+            self.compton_q_sample = f[datasetname + '/Sq_halfQ'][()]
             self.num_compton_q_samples = len(self.compton_q_sample)
-            self.sBound = f.get(datasetname + '/Sq_bound').value
-            self.nFree = f.get(datasetname + '/Sq_free').value
+            self.sBound = f[datasetname + '/Sq_bound'][()]
+            self.nFree = f[datasetname + '/Sq_free'][()]
 
         if center_and_align_according_to_principal_axes:
             self.center_and_align_according_to_principal_axes()
