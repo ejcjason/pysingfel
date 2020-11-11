@@ -10,13 +10,13 @@ requirements = [
 ]
 
 setup(name='pysingfel',
-      maintainer='Haoyuan Li',
+      maintainer='Juncheng E',
       version='0.3.0',
-      maintainer_email='hyli16@stanford.edu',
-      description='Python version of singfel.',
+      maintainer_email='juncheng.e@xfel.eu',
+      description='SimEx version of pysingfel.',
       long_description=open('README.rst', encoding='utf8').read(),
-      url='https://github.com/Haoyuan-Li-93/pysingfel.git',
-      packages=['pysingfel', 'pysingfel.gpu'],
+      url='https://github.com/JunCEEE/pysingfel/tree/simex',
+      packages=['pysingfel'],
       scripts=['bin/radiationDamageMPI'],
       install_requires=requirements,
       zip_safe=False)
