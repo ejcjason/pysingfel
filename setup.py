@@ -6,7 +6,8 @@ requirements = [
     'numba',
     'scipy',
     'mpi4py',
-    'h5py'
+    'h5py',
+    'periodictable'
 ]
 
 setup(name='pysingfel',
