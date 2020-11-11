@@ -2,54 +2,25 @@ import numpy as np
 
 
 # several converters
-def wavelength_to_wavenumber(wavelength):
-    """
-    Wavenumber is defined as 1/wavelength
-
-    :param wavelength: wavelength in meter
-    :return:
-    """
-    return 1. / wavelength
+def wavelength2wavenumber(Lambda):
+    return 1. / Lambda
 
 
-def wavenumber_to_wavelength(k):
-    """
-
-    :param k: The wavenumber in meter^-1.  k= 1./wavelength.
-    :return: 1./k
-    """
+def wavenumber2wavelength(k):
     return 1. / k
 
 
-def photon_energy_to_wavelength(photon_energy):
-    """
-    Conver photon energy in ev to wave length in m.
-    :param photon_energy: photon energy in ev
-    :return: 
-    """
-    return 1.23984197386209e-06 / photon_energy
+def photonEnergy2wavelength(photonEnergy):
+    return 1.2398e-6 / photonEnergy
 
 
-def wavelength_to_photon_energy(wavelength):
-    """
-    Convert wave length to photon energy in ev
-    :param wavelength: wavelength in m.
-    :return: 
-    """
-
-    return 1.23984197386209e-06 / wavelength
+def wavelength2photonEnergy(wavelength):
+    return 1.2398e-6 / wavelength
 
 
 class Beam(object):
-    """
-    Basic beam object
-    """
-
-    def __init__(self, *fname):
-        """
-        :param fname: The beam profile
-        """
-        self.wavelength = 0  # (m) wavelength
+    def __init__(self, fname):
+        self.Lambda = 0  # (m) wavelength
         self.photon_energy = 0  # (eV) photon energy
         self.k = 0  # (m^-1)
         self.focus_xFWHM = 0  # (m) beam focus diameter in x direction
@@ -58,47 +29,39 @@ class Beam(object):
         self.focus_area = 0  # (m^2)
         self.n_phot = 0  # number of photons per pulse
         self.phi_in = 0  # number of photon per pulse per area (m^-2)
-        # Default polarization angle, requires input from user or file in the future
-        self.Polarization = np.array([1, 0, 0])
+        self.Polarization = 0  # Default polarization angle, requires input from user or file in the future
         if fname is not None:
-            self.read_beamfile(fname[0])
+            self.readBeamFile(fname)
 
     def update(self):
         """
         Update the related properties of the class object, after
         a certain property is provided.
         """
-        if self.wavelength != 0:
-            self.photon_energy = wavelength_to_photon_energy(self.wavelength)
-            self.k = wavelength_to_wavenumber(self.wavelength)
+        if self.Lambda != 0:
+            self.photon_energy = wavelength2photonEnergy(self.Lambda)
+            self.k = wavelength2wavenumber(self.Lambda)
         elif self.photon_energy != 0:
-            self.wavelength = photon_energy_to_wavelength(self.photon_energy)
-            self.k = wavelength_to_wavenumber(self.wavelength)
+            self.Lambda = photonEnergy2wavelength(self.photon_energy)
+            self.k = wavelength2wavenumber(self.Lambda)
         elif self.k != 0:
-            self.wavelength = wavenumber_to_wavelength(self.k)
-            self.photon_energy = wavelength_to_photon_energy(self.wavelength)
+            self.Lambda = wavenumber2wavelength(self.k)
+            self.photon_energy = wavelength2photonEnergy(self.Lambda)
 
         if self.focus_xFWHM != 0:
-            self.set_focus_area()
+            self.set_focusArea()
             if self.n_phot != 0:
-                self.set_photons_per_pulse_per_area()
+                self.set_photonsPerPulsePerArea()
 
     # setters and getters
     def set_wavelength(self, x):
-        """
-        :param x: wavelength in meter
-        """
-        self.wavelength = x
+        self.Lambda = x
         self.update()
 
     def get_wavelength(self):
-        return self.wavelength
+        return self.Lambda
 
     def set_photon_energy(self, ev):
-        """
-        Set photon energy
-        :param ev: photon energy in ev
-        """
         self.photon_energy = ev
         self.update()
 
@@ -108,29 +71,7 @@ class Beam(object):
     def get_wavenumber(self):
         return self.k
 
-    def get_wavevector(self):
-        """
-        Get the wave vector. Notice that here, the wavevector is defined as
-        [0, 0, 1 / wavelength]
-        :return:
-        """
-        return np.array([0, 0, 2 * np.pi / self.wavelength])
-
     def set_focus(self, x, y=None, shape='circle'):
-        """
-        Set the focus of the beam.
-        
-        
-        The shape variable defines the shape of the transverse profile of the beam. 
-        If don't know what to choose for the shape variable, leave it as default.
-        The influence is very limited in this implementatin.
-        
-        :param x: The FWHM of the beam along x axis in meter.
-        :param y: The FWHM of the beam along y axis in meter.
-        :param shape: 
-        :return: 
-        """
-
         if y is not None:
             # ellipse
             self.focus_xFWHM = x
@@ -146,7 +87,7 @@ class Beam(object):
     def get_focus(self):
         return self.focus_xFWHM
 
-    def set_focus_area(self):
+    def set_focusArea(self):
         if self.focus_shape is 'square':
             self.focus_area = self.focus_xFWHM * self.focus_yFWHM
         else:
@@ -156,28 +97,22 @@ class Beam(object):
     def get_focus_area(self):
         return self.focus_area
 
-    def set_photons_per_pulse(self, x):
-        """
-        :param x: photons per pulse
-        """
+    def set_photonsPerPulse(self, x):
         self.n_phot = x
         self.update()
 
-    def get_photons_per_pulse(self):
+    def get_photonsPerPulse(self):
         return self.n_phot
 
-    def set_photons_per_pulse_per_area(self):
+    def set_photonsPerPulsePerArea(self):
         self.phi_in = self.n_phot / self.focus_area
 
-    def get_photons_per_pulse_per_area(self):
+    def get_photonsPerPulsePerArea(self):
         return self.phi_in
 
-    def read_beamfile(self, fname):
+    def readBeamFile(self, fname):
         """
         Read Beam file and set the corresponding property.
-
-        :param fname: beam file.
-        :return:
         """
         with open(fname) as f:
             content = f.readlines()

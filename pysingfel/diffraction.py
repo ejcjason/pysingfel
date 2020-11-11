@@ -1,119 +1,146 @@
-from numba import jit
+import numba as nb
+import math
+from numba import jit, guvectorize, float64, c16
 from scipy.interpolate import CubicSpline
-from pysingfel.geometry import reshape_pixels_position_arrays_to_1d
-import numpy as np
+
+from pysingfel.detector import *
+from pysingfel.particle import *
 
 
-def calculate_thomson(ang):
-    """
-    Calculate the Thomson scattering
-    :param ang: The angle of the scattered particle.
-    :return:
-    """
+def calculate_Thomson(ang):
     # Should fix this to accept angles mu and theta
     re = 2.81793870e-15  # classical electron radius (m)
-    p = (1 + np.cos(ang)) / 2.
-    return re ** 2 * p  # Thomson scattering (m^2)
+    P = (1 + np.cos(ang)) / 2.
+    return re**2 * P  # Thomson scattering (m^2)
 
+
+def calculate_atomicFactor(particle, detector):
+    """
+    particle.ffTable contains atomic form factors against particle.qSample.
+    Here the atomic form factors related to the wavevector of each pixel of
+    the detector is calculated through interpolation to the ffTable data.
+
+    Return:
+        f_hkl: atomic form factors related to each pixel of detector for each atom type.
+    """
+    f_hkl = np.zeros((detector.py, detector.px, particle.numAtomTypes))
+    q_mod_Bragg = detector.q_mod * 1e-10/2.
+
+    for atm in range(particle.numAtomTypes):
+        cs = CubicSpline(particle.qSample, particle.ffTable[atm, :])  # Use cubic spline
+        f_hkl[:, :, atm] = cs(q_mod_Bragg)  # interpolate
+    return f_hkl
+
+#def Phase(atomPos,  q_xyz, angles):
+    #for ix in range(q_xyz.shape[0]):
+        #for iy in range(q_xyz.shape[1]):
+            #for icart in range(3):
+                #re[ix, iy] += atomPos[icart] * q_xyz[ix, iy, icart]
+
+
+# ~20% improved wrt original implementation
+#@jit
+#def cal(f_hkl, atomPos, q_xyz, xyzInd):
+    #F_re = np.zeros_like(q_xyz[:, :, 0], dtype=nb.double)
+    #F_im = np.zeros_like(q_xyz[:, :, 0], dtype=nb.double)
+    #for atm in range(atomPos.shape[0]):
+        #for ix in range(F_re.shape[0]):
+            #for iy in range(F_re.shape[1]):
+                #angle = 2.*np.pi * ( atomPos[atm,0] * q_xyz[ix, iy, 0] +  atomPos[atm,1] * q_xyz[ix, iy, 1] + atomPos[atm,2] * q_xyz[ix, iy, 2])
+                #f = f_hkl[ix, iy, xyzInd[atm]]
+                #F_re[ix, iy] +=  np.cos(angle) * f
+                #F_im[ix, iy] +=  np.sin(angle) * f
+
+    #for ix in range(F_re.shape[0]):
+        #for iy in range(F_re.shape[1]):
+            #F_re[ix, iy] = F_re[ix, iy]**2 + F_im[ix, iy]**2
+
+    #return F_re
+
+# >20% improved wrt original implementation
+@guvectorize(["(float64[:,:,:], float64[:,:,:], float64[:,:], int32[:], float64[:,:])"],
+        "(n,m,l),(n,m,k),(j,k),(j) -> (n,m)", target="parallel")
+def cal(f_hkl, q_xyz, atomPos, xyzInd, F):
+
+    F_im = np.zeros_like(F)
+
+    for atm in range(atomPos.shape[0]):
+        for ix in range(F.shape[0]):
+            for iy in range(F.shape[1]):
+                angle = 2.*np.pi * ( atomPos[atm,0] * q_xyz[ix, iy, 0] +  atomPos[atm,1] * q_xyz[ix, iy, 1] + atomPos[atm,2] * q_xyz[ix, iy, 2])
+                f = f_hkl[ix, iy, xyzInd[atm]]
+                F[ix, iy] +=  np.cos(angle) * f
+                F_im[ix, iy] +=  np.sin(angle) * f
+
+    for ix in range(F.shape[0]):
+        for iy in range(F.shape[1]):
+            F[ix, iy] = F[ix, iy]**2+ F_im[ix, iy]**2
+
+#@cuda.jit
+#def cal(f_hkl, q_xyz, atomPos, xyzInd, F_re, F_im):
+
+    ## Get a 2D CUDA grid.
+    #ix, iy = cuda.grid(2)
+
+    #if ix < F_re.shape[0] and iy < F_im.shape[1]:
+    #for atm in range(atomPos.shape[0]):
+        ##for ix in range(F.shape[0]):
+            ##for iy in range(F.shape[1]):
+                #angle = 2.*np.pi * ( atomPos[atm,0] * q_xyz[ix, iy, 0] +  atomPos[atm,1] * q_xyz[ix, iy, 1] + atomPos[atm,2] * q_xyz[ix, iy, 2])
+                #f = f_hkl[ix, iy, xyzInd[atm]]
+                #F_re[ix, iy] +=  np.cos(angle) * f
+                #F_im[ix, iy] +=  np.sin(angle) * f
+
+#@cuda.jit
+#def modulus_square(re, im):
+
+    #ix, iy = cuda.grid(2)
+
+    #if ix < F_re.shape[0] and iy < F_im.shape[1]:
+       #F_re[ix,iy] = F_re[ix, iy]**2+ F_im[ix, iy]**2
+
+
+
+def calculate_molecularFormFactorSq(particle, detector):
+    """
+    Calculate molecular form factor for each pixel of detector to get diffraction pattern.
+    Sum over all atoms with the right phase factor.
+    See https://www.nature.com/article-assets/npg/srep/2016/160425/srep24791/extref/srep24791-s1.pdf
+    for more details about the derivation (equ. 13 is used for calculation here).
+    """
+    f_hkl = calculate_atomicFactor(particle, detector)
+    s = particle.SplitIdx
+    xyzInd = np.zeros(s[-1], dtype=np.int32)
+    detector_shape = detector.q_xyz.shape
+    F_sq = np.zeros((detector_shape[0], detector_shape[1]), dtype=np.float64)
+    #F_im = np.zeros_like(F_re)
+
+    for i in range(len(s)-1):
+        xyzInd[s[i]:s[i+1]] = i
+
+    ## Initialize cuda device.
+    #threads_per_block = (32,32)
+    #blocks_per_grid = []
+    #for i,dimension in enumerate(detector_shape):
+        #blocks_per_grid.append( int(math.ceil(dimension / threads_per_block[i])) )
+
+    #cal[blocks_per_grid, threads_per_block](f_hkl, detector.q_xyz, particle.atomPos, xyzInd, F_re, F_im)
+    cal(f_hkl, detector.q_xyz, particle.atomPos, xyzInd, F_sq)
+
+    return F_sq
 
 def calculate_compton(particle, detector):
     """
     Calculate the contribution to the diffraction pattern from compton scattering.
-
-    :param particle: The particle object
-    :param detector: The detector object
-    :return:
     """
-
-    half_q = reshape_pixels_position_arrays_to_1d(detector.pixel_distance_reciprocal * 1e-10 / 2.)
-
-    cs = CubicSpline(particle.compton_q_sample, particle.sBound)
-    s_bound = cs(half_q)
+    half_q = detector.q_mod * 1e-10/2.
+    cs = CubicSpline(particle.comptonQSample, particle.sBound)
+    S_bound = cs(half_q)
     if isinstance(particle.nFree, (list, tuple, np.ndarray)):
         # if iterable, take first element to be number of free electrons
-        n_free = particle.nFree[0]
+        N_free = particle.nFree[0]
     else:
         # otherwise assume to be a single number
-        n_free = particle.nFree
-    compton = s_bound + n_free
-    return compton
-
-
-def calculate_atomic_factor(particle, q_space, pixel_num):
-    """
-    Calculate the atomic form factor for each atom at each momentum
-    :param particle: The particle object
-    :param q_space: The reciprocal to calculate
-    :param pixel_num: The number of pixels.
-    :return:
-    """
-    f_hkl = np.zeros((particle.num_atom_types, pixel_num))
-    q_space_1d = np.reshape(q_space, [pixel_num, ])
-
-    if particle.num_atom_types == 1:
-        cs = CubicSpline(particle.q_sample, particle.ff_table[:])  # Use cubic spline
-        f_hkl[0, :] = cs(q_space_1d)  # interpolate
-    else:
-        for atm in range(particle.num_atom_types):
-            cs = CubicSpline(particle.q_sample, particle.ff_table[atm, :])  # Use cubic spline
-            f_hkl[atm, :] = cs(q_space_1d)  # interpolate
-
-    return np.reshape(f_hkl, [particle.num_atom_types, ] + list(q_space.shape))
-
-
-@jit
-def get_phase(atom_pos, q_xyz):
-    """
-    Calculate the phase of the diffraction field due to the specific atom
-    :param atom_pos: The atom position
-    :param q_xyz: The reciprocal space to calculate.
-    :return:
-    """
-    phase = 2 * np.pi * (atom_pos[0] * q_xyz[:, 0] +
-                         atom_pos[1] * q_xyz[:, 1] +
-                         atom_pos[2] * q_xyz[:, 2])
-    return np.exp(1j * phase)
-
-
-@jit
-def cal(f_hkl, atom_pos, q_xyz, xyz_ind, pixel_number):
-    """
-    Calculate the diffraction intensity field.
-
-    :param f_hkl: The form factor array
-    :param atom_pos:  The atom position array
-    :param q_xyz: The reciprocal space to calculate.
-    :param xyz_ind: The split index.
-    :param pixel_number: number of pixels.
-    :return:
-    """
-    f = np.zeros(pixel_number, dtype=np.complex128)
-    for atm in range(atom_pos.shape[0]):
-        f += get_phase(atom_pos[atm, :], q_xyz) * f_hkl[xyz_ind[atm], :]
-    return np.abs(f) ** 2
-
-
-def calculate_molecular_form_factor_square(particle, q_space, q_position):
-    """
-    Calculate the diffraction intensity field of the molecule.
-
-    :param particle: The particle object.
-    :param q_space: The reciprocal distance of the pixels.
-    :param q_position: The reciprocal position of the pixels.
-    :return:
-    """
-    shape = q_position.shape
-    pixel_number = np.prod(shape[:-1])
-    q_space_1d = np.reshape(q_space, [pixel_number, ])
-    q_position_1d = np.reshape(q_position, [pixel_number, 3])
-
-    f_hkl = calculate_atomic_factor(particle, q_space_1d, pixel_number)
-    split_index = particle.split_idx[:]
-    xyz_ind = np.zeros(split_index[-1], dtype=int)
-    for i in range(len(split_index) - 1):
-        xyz_ind[split_index[i]:split_index[i + 1]] = i
-
-    pattern_1d = cal(f_hkl, particle.atom_pos, q_position_1d, xyz_ind, pixel_number)
-    pattern = np.reshape(pattern_1d, shape[:-1])
-
-    return pattern
+        N_free = particle.nFree
+    Compton = S_bound + N_free
+    return Compton
