@@ -171,9 +171,9 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
         else:
             Compton = np.zeros((py, px))
         photon_field = F_hkl_sq + Compton
-        detector_intensity += photon_field
+        detector_intensity += photon_field * beam.get_photonsPerPulsePerArea()
 
-    detector_intensity *= det.solidAngle * det.PolarCorr * beam.get_photonsPerPulsePerArea()
+    detector_intensity *= det.solidAngle * det.PolarCorr
 
 
     detector_counts = convert_to_poisson(detector_intensity)
