@@ -1,6 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from pysingfel.radiationDamageMPI import main
+import sys
+from pysingfel.radiationDamageMPI import main, parse_input
 
 if __name__ == '__main__':
-    main()
+    parameters = parse_input(sys.argv[1:])
+    main(parameters=parameters)
