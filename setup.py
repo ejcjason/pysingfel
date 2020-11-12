@@ -7,7 +7,8 @@ requirements = [
     'scipy',
     'mpi4py',
     'h5py',
-    'periodictable'
+    'periodictable',
+    'pyquaternion'
 ]
 
 setup(name='pysingfel',

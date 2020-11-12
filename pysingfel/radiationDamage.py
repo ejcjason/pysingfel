@@ -1,6 +1,7 @@
 from .toolbox import *
 from .FileIO import *
 import os
+from pyquaternion import Quaternion
 
 
 def generateRotations(uniformRotation, rotationAxis, numQuaternions):
@@ -10,9 +11,9 @@ def generateRotations(uniformRotation, rotationAxis, numQuaternions):
 
     if uniformRotation is None:
         # No rotation desired, init quaternions as (1,0,0,0)
-        Quaternions =  np.empty((numQuaternions, 4))
-        Quaternions[:,0] = 1.
-        Quaternions[:,1:] = 0.
+        Quaternions = np.empty((numQuaternions, 4))
+        Quaternions[:, 0] = 1.
+        Quaternions[:, 1:] = 0.
 
         return Quaternions
 
@@ -47,13 +48,17 @@ def setEnergyFromFile(fname, beam):
         if "photon_energy" in f['params'].keys():
             photon_energy = f.get('/params/photon_energy').value
         elif 'xparams' in f['params'].keys():
-            lines = [l.split(' ') for l in f['params/xparams'].value.decode('utf-8').split("\n")]
+            lines = [
+                l.split(' ')
+                for l in f['params/xparams'].value.decode('utf-8').split("\n")
+            ]
             xparams = get_dict_from_lines(lines)
             photon_energy = xparams['EPH']
         else:
             # Legacy support: Try get from history.
             try:
-                photon_energy = f.get('/history/parent/detail/params/photonEnergy').value
+                photon_energy = f.get(
+                    '/history/parent/detail/params/photonEnergy').value
             except:
                 raise
 
@@ -69,7 +74,10 @@ def setFocusFromFile(fname, beam):
             focus_xFWHM = f.get('/params/focus/xFWHM').value
             focus_yFWHM = f.get('/params/focus/yFWHM').value
         elif 'xparams' in f['params'].keys():
-            lines = [l.split(' ') for l in f['params/xparams'].value.decode('utf-8').split("\n")]
+            lines = [
+                l.split(' ')
+                for l in f['params/xparams'].value.decode('utf-8').split("\n")
+            ]
             xparams = get_dict_from_lines(lines)
             diam = xparams['DIAM']
             focus_xFWHM = diam
@@ -92,9 +100,23 @@ def setFluenceFromFile(fname, timeSlice, sliceInterval, beam):
     n_phot = 0
     for i in range(sliceInterval):
         with h5py.File(fname, 'r') as f:
-            datasetname = '/data/snp_' + '{0:07}'.format(timeSlice-i) + '/Nph'
+            datasetname = '/data/snp_' + '{0:07}'.format(
+                timeSlice - i) + '/Nph'
             n_phot += f.get(datasetname).value
     beam.set_photonsPerPulse(n_phot)
+
+
+def rotateBackQuat(fname):
+    """
+    Get the quaternion to rotate back from PMI angle
+    """
+    with h5py.File(fname, 'r') as f:
+        angle_q = f['data/angle'][...][0]
+        r1 = Quaternion(angle_q)
+        r2 = r1.inverse
+        # r2_q = np.insert(r2.vector, 0, r2.scalar)
+    return r2
+
 
 def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     """
@@ -131,11 +153,18 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     px = det.get_numPix_x()
     py = det.get_numPix_x()
 
+    # Input file
+    inputName = os.path.join(inputDir, 'pmi_out_%07d.h5' % (pmiID))
+
     # Setup quaternion.
     quaternion = myQuaternions[counter, :]
-
-    # Input file
-    inputName = os.path.join(inputDir, 'pmi_out_%07d.h5' % (pmiID) )
+    if (parameters['backRotation']):
+        q_a = rotateBackQuat(inputName)
+        # Convert to pyquaterion type
+        q_b = Quaternion(quaternion)
+        # Caution: if the rotation method changed, please check this.
+        q_c = q_b * q_a
+        quaternion = np.insert(q_c.vector, 0, q_c.scalar)
 
     # Set up diffraction geometry
     if not givenPhotonEnergy:
@@ -175,9 +204,9 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
 
     detector_intensity *= det.solidAngle * det.PolarCorr
 
-
     detector_counts = convert_to_poisson(detector_intensity)
-    saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector_intensity, quaternion, det, beam)
+    saveAsDiffrOutFile(outputName, inputName, counter, detector_counts,
+                       detector_intensity, quaternion, det, beam)
 
 
 def diffract(parameters):
@@ -199,6 +228,7 @@ def diffract(parameters):
     for ntask in range(ntasks):
         MakeOneDiffr(myQuaternions, ntask, parameters, outputName)
 
+
 def get_dict_from_lines(reader):
     """ Turn a list of [key, ' ', ..., value] elements into a dict.
 
@@ -208,22 +238,22 @@ def get_dict_from_lines(reader):
     """
     # These fields shall be handled as numeric data.
     numeric_keys = [
-            'N',
-            'Z',
-            'DIST',
-            'EPH',
-            'NPH',
-            'DIAM',
-            'FLU_MAX',
-            'T',
-            'T0',
-            'R0',
-            'DT',
-            'STEPS',
-            'PROGRESS',
-            'RANDSEED',
-            'RSTARTE',
-            ]
+        'N',
+        'Z',
+        'DIST',
+        'EPH',
+        'NPH',
+        'DIAM',
+        'FLU_MAX',
+        'T',
+        'T0',
+        'R0',
+        'DT',
+        'STEPS',
+        'PROGRESS',
+        'RANDSEED',
+        'RSTARTE',
+    ]
     # Initialize return dictionary.
     ret = dict()
 
@@ -250,5 +280,3 @@ def get_dict_from_lines(reader):
 
     # Return finished dict.
     return ret
-
-
