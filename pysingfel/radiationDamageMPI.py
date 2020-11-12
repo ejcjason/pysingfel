@@ -128,7 +128,7 @@ def parse_input(args):
                         help='If 1, rotates the sample uniformly in SO(3),\
                                 if 0 random orientation in SO(3),\
                                 if None (omitted): no orientation.')
-    parser.add_argument('--backRotation', type=ParseBoolean,
+    parser.add_argument('--backRotation', type=ParseBoolean, default=False,
                         help='If 1, rotates the sample inversing the PMI rotation,\
                                 if 0, rotate as defined in uniformRotation,\
                                 this option will override uniformRotation')
