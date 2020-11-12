@@ -175,7 +175,6 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
 
     done = False
     timeSlice = 0
-    total_phot = 0
     detector_intensity = np.zeros((py, px))
     while not done:
         # set time slice to calculate diffraction pattern
@@ -191,7 +190,6 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
         if not givenFluence:
             # sum up the photon fluence inside a sliceInterval
             setFluenceFromFile(inputName, timeSlice, sliceInterval, beam)
-        total_phot += beam.get_photonsPerPulse()
         # Coherent contribution
         F_hkl_sq = calculate_molecularFormFactorSq(particle, det)
         # Incoherent contribution
