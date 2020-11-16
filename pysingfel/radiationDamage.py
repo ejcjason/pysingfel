@@ -4,10 +4,16 @@ import os
 from pyquaternion import Quaternion
 
 
-def generateRotations(uniformRotation, rotationAxis, numQuaternions):
+def generateRotations(uniformRotation, rotationAxis, numQuaternions, orientation):
     """
     Return Quaternions saving the rotations to the particle.
     """
+
+    # Orientation option overrides
+    if orientation is not None:
+        Quaternions = np.array([orientation] * numQuaternions)
+
+        return Quaternions
 
     if uniformRotation is None:
         # No rotation desired, init quaternions as (1,0,0,0)
@@ -157,6 +163,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     inputName = os.path.join(inputDir, 'pmi_out_%07d.h5' % (pmiID))
 
     # Setup quaternion.
+
     quaternion = myQuaternions[counter, :]
     if (parameters['backRotation']):
         q_a = rotateBackQuat(inputName)

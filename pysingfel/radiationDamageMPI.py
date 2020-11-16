@@ -44,7 +44,7 @@ def master_diffract(comm, parameters):
     if numProcesses == 1:
         rotationAxis = parameters['rotationAxis']
         uniformRotation = parameters['uniformRotation']
-        myQuaternions = generateRotations(uniformRotation, rotationAxis, ntasks)
+        myQuaternions = generateRotations(uniformRotation, rotationAxis, ntasks, parameters['orientation'])
         outputName = parameters['outputDir'] + '/diffr_out_0000001.h5'
         if os.path.exists(outputName):
             os.remove(outputName)
@@ -73,7 +73,7 @@ def slave_diffract(comm, parameters):
     ntasks = (pmiEndID - pmiStartID + 1) * numDP
     rotationAxis = parameters['rotationAxis']
     uniformRotation = parameters['uniformRotation']
-    myQuaternions = generateRotations(uniformRotation, rotationAxis, ntasks)
+    myQuaternions = generateRotations(uniformRotation, rotationAxis, ntasks, parameters['orientation'])
 
     # Setup output file
     outputName = os.path.join(parameters['outputDir'], 'diffr_out_%07d.h5' % (comm.Get_rank()))
@@ -124,14 +124,15 @@ def parse_input(args):
     parser.add_argument('--geomFile', help='Geometry file defining diffraction geometry')
     parser.add_argument('--configFile', help='Absolute path to the config file')
     parser.add_argument('--rotationAxis', default='xyz', help='Euler rotation convention')
+    parser.add_argument('--orientation',nargs='+', type=float, help='Specify the quternion r i j k of '
+                        'each diffraction pattern. It overrides --unifromRotation')
     parser.add_argument('--uniformRotation', type=ParseBoolean,
                         help='If 1, rotates the sample uniformly in SO(3),\
                                 if 0 random orientation in SO(3),\
                                 if None (omitted): no orientation.')
     parser.add_argument('--backRotation', type=ParseBoolean, default=False,
                         help='If 1, rotates the sample inversing the PMI rotation,\
-                                if 0, rotate as defined in uniformRotation,\
-                                this option will override uniformRotation')
+                                if 0, rotate as defined in uniformRotation')
     parser.add_argument('--calculateCompton', type=ParseBoolean, default=False,
                         help='If 1, includes Compton scattering in the diffraction pattern')
     parser.add_argument('--sliceInterval', type=int, help='Calculates photon field at every slice interval')

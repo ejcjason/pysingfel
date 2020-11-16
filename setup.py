@@ -6,7 +6,7 @@ requirements = [
     'numba',
     'scipy',
     'mpi4py',
-    'h5py',
+    'h5py==2.8',
     'periodictable',
     'pyquaternion'
 ]
