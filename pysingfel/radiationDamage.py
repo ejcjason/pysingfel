@@ -116,11 +116,15 @@ def rotateBackQuat(fname):
     """
     Get the quaternion to rotate back from PMI angle
     """
-    with h5py.File(fname, 'r') as f:
-        angle_q = f['data/angle'][...][0]
-        r1 = Quaternion(angle_q)
-        r2 = r1.inverse
-        # r2_q = np.insert(r2.vector, 0, r2.scalar)
+    try:
+        with h5py.File(fname, 'r') as f:
+            angle_q = f['data/angle'][...][0]
+            r1 = Quaternion(angle_q)
+            r2 = r1.inverse
+            # r2_q = np.insert(r2.vector, 0, r2.scalar)
+    except KeyError:
+        print(f"'data/angle' not found in {fname}")
+        exit()
     return r2
 
 
