@@ -52,7 +52,7 @@ def setEnergyFromFile(fname, beam):
     """
     with h5py.File(fname, 'r') as f:
         if "photon_energy" in f['params'].keys():
-            photon_energy = f.get('/params/photon_energy').value
+            photon_energy = f['/params/photon_energy'][()]
         elif 'xparams' in f['params'].keys():
             lines = [
                 l.split(' ')
@@ -63,8 +63,7 @@ def setEnergyFromFile(fname, beam):
         else:
             # Legacy support: Try get from history.
             try:
-                photon_energy = f.get(
-                    '/history/parent/detail/params/photonEnergy').value
+                photon_energy = f['/history/parent/detail/params/photonEnergy'][()]
             except:
                 raise
 
@@ -77,8 +76,8 @@ def setFocusFromFile(fname, beam):
     """
     with h5py.File(fname, 'r') as f:
         if "focus" in f['params'].keys():
-            focus_xFWHM = f.get('/params/focus/xFWHM').value
-            focus_yFWHM = f.get('/params/focus/yFWHM').value
+            focus_xFWHM = f['/params/focus/xFWHM'][()]
+            focus_yFWHM = f['/params/focus/yFWHM'][()]
         elif 'xparams' in f['params'].keys():
             lines = [
                 l.split(' ')
@@ -91,8 +90,8 @@ def setFocusFromFile(fname, beam):
 
         else:
             try:
-                focus_xFWHM = f.get('/history/parent/detail/misc/xFWHM').value
-                focus_yFWHM = f.get('/history/parent/detail/misc/yFWHM').value
+                focus_xFWHM = f['/history/parent/detail/misc/xFWHM'][()]
+                focus_yFWHM = f['/history/parent/detail/misc/yFWHM'][()]
             except:
                 raise
 
@@ -108,7 +107,7 @@ def setFluenceFromFile(fname, timeSlice, sliceInterval, beam):
         with h5py.File(fname, 'r') as f:
             datasetname = '/data/snp_' + '{0:07}'.format(
                 timeSlice - i) + '/Nph'
-            n_phot += f.get(datasetname).value
+            n_phot += f[datasetname][()]
     beam.set_photonsPerPulse(n_phot)
 
 

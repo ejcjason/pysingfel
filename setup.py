@@ -6,14 +6,14 @@ requirements = [
     'numba',
     'scipy',
     'mpi4py',
-    'h5py==2.8',
+    'h5py',
     'periodictable',
     'pyquaternion'
 ]
 
 setup(name='pysingfel',
       maintainer='Juncheng E',
-      version='0.3.0',
+      version='0.4.0',
       maintainer_email='juncheng.e@xfel.eu',
       description='SimEx version of pysingfel.',
       long_description=open('README.rst', encoding='utf8').read(),

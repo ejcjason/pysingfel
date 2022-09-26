@@ -54,24 +54,24 @@ class Particle(object):
 
     def readh5File(self, fname, datasetname):
         with h5py.File(fname, 'r') as f:
-            atomPos = f.get(datasetname + '/r').value  # atom position -> N x 3 array
-            ionList = f.get(datasetname + '/xyz').value  # length = N, contain atom type id for each atom
+            atomPos = f[datasetname + '/r'][()]  # atom position -> N x 3 array
+            ionList = f[datasetname + '/xyz'][()]  # length = N, contain atom type id for each atom
             self.atomPos = atomPos[np.argsort(ionList)]
             _, idx = np.unique(np.sort(ionList), return_index=True)
             self.SplitIdx = np.append(idx, [len(ionList)])
 
             # get atom factor table, sorted by atom type id
-            atomType = f.get(datasetname + '/T').value  # atom type array, each type is represented by an integer
+            atomType = f[datasetname + '/T'][()]  # atom type array, each type is represented by an integer
             self.numAtomTypes = len(atomType)
-            ffTable = f.get(datasetname + '/ff').value
+            ffTable = f[datasetname + '/ff'][()]
             self.ffTable = ffTable[np.argsort(atomType)]
 
-            self.qSample = f.get(datasetname + '/halfQ').value
+            self.qSample = f[datasetname + '/halfQ'][()]
             self.numQSamples = len(self.qSample)
-            self.comptonQSample = f.get(datasetname + '/Sq_halfQ').value
+            self.comptonQSample = f[datasetname + '/Sq_halfQ'][()]
             self.numComptonQSamples = len(self.comptonQSample)
-            self.sBound = f.get(datasetname + '/Sq_bound').value
-            self.nFree = f.get(datasetname + '/Sq_free').value
+            self.sBound = f[datasetname + '/Sq_bound'][()]
+            self.nFree = f[datasetname + '/Sq_free'][()]
 
     def readPDB(self, fname, ff = 'WK'):
         """
