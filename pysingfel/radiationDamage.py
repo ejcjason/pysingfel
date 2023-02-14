@@ -195,6 +195,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
 
         if counter == 0:
             print("timeSlice =", timeSlice)
+            print("PMI_fn =", inputName)
 
         # load particle information
         datasetname = '/data/snp_%07d' % (timeSlice)
