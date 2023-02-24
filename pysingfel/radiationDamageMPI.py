@@ -130,14 +130,16 @@ def parse_input(args):
                         help='If 1, rotates the sample uniformly in SO(3),\
                                 if 0 random orientation in SO(3),\
                                 if None (omitted): no orientation.')
+    parser.add_argument('--flatTop', type=float, default=0.0, help='Set the incident number of photons with a constant number. 0 means taking the PMI parameters.')
     parser.add_argument('--backRotation', type=ParseBoolean, default=False,
                         help='If 1, rotates the sample inversing the PMI rotation,\
                                 if 0, rotate as defined in uniformRotation')
     parser.add_argument('--calculateCompton', type=ParseBoolean, default=False,
                         help='If 1, includes Compton scattering in the diffraction pattern')
+    parser.add_argument('--startSlice', type=int, default = 0, help='Starting slice index, default is 0')
     parser.add_argument('--sliceInterval', type=int, help='Calculates photon field at every slice interval')
     parser.add_argument('--numSlices', type=int,
-                        help='Number of time-slices to use from Photon Matter Interaction (PMI) file')
+                        help='Number of time-slices to use from Photon Matter Interaction (PMI) file, A.K.A end slice index')
     parser.add_argument('--pmiStartID', type=int, help='First Photon Matter Interaction (PMI) file ID to use')
     parser.add_argument('--pmiEndID', type=int, help='Last Photon Matter Interaction (PMI) file ID to use')
     parser.add_argument('--numDP', type=int, help='Number of diffraction patterns per PMI file')

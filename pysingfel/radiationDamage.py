@@ -147,6 +147,12 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     det = Detector(geomFile)
     beam = Beam(beamFile)
 
+    if parameters['flatTop'] >0:
+        photons = float(parameters['flatTop'])
+        if counter == 0:
+            print(f"flatTop = {photons}")
+        beam.set_photonsPerPulse(photons)
+
     # If not given, read from pmi file later
     givenFluence = False
     if beam.get_photonsPerPulse() > 0:
@@ -184,7 +190,10 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     det.init_dp(beam)
 
     done = False
-    timeSlice = 0
+    timeSlice = parameters["startSlice"]
+    if counter == 0:
+        print("startSlice =", timeSlice)
+
     detector_intensity = np.zeros((py, px))
     while not done:
         # set time slice to calculate diffraction pattern
@@ -194,8 +203,8 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
         timeSlice += sliceInterval
 
         if counter == 0:
-            print("timeSlice =", timeSlice)
             print("PMI_fn =", inputName)
+            print("timeSlice =", timeSlice)
 
         # load particle information
         datasetname = '/data/snp_%07d' % (timeSlice)
@@ -204,6 +213,9 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
         if not givenFluence:
             # sum up the photon fluence inside a sliceInterval
             setFluenceFromFile(inputName, timeSlice, sliceInterval, beam)
+        if counter == 0:
+            print("nphotons =", beam.n_phot)
+            print("nphotons/area =", beam.get_photonsPerPulsePerArea())
         # Coherent contribution
         F_hkl_sq = calculate_molecularFormFactorSq(particle, det)
         # Incoherent contribution
