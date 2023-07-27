@@ -85,8 +85,13 @@ class Detector(object):
                         self.pix_height = self.pix_width
                     if key == 'px':
                         self.px = int(value)
-                        self.py = self.px
-                        self.numPix = self.px ** 2
+                        # self.py = self.px
+                        # self.numPix = self.px ** 2
+                        # self.cx = (self.px - 1) / 2.
+                        # self.cy = (self.py - 1) / 2.
+                    if key == 'py':
+                        self.py = int(value)
+                        self.numPix = self.px * self.py
                         self.cx = (self.px - 1) / 2.
                         self.cy = (self.py - 1) / 2.
 

@@ -20,6 +20,7 @@ def main(parameters=None):
     rank = comm.Get_rank()
     # Initialize time
     start = time.time()
+    check_parameters(rank, parameters)
     if rank == 0:
         master_diffract(comm, parameters)
     else:
@@ -31,6 +32,12 @@ def main(parameters=None):
         end = time.time()
         print('Finished: ', end - start, ' seconds.')
 
+def check_parameters(rank, parameters):
+    if parameters["startSlice"] < 0:
+        if rank == 0:
+            raise ValueError(f"startSlice = {parameters['startSlice']} < 0, startSlice should be >= 0")
+        else:
+            exit()
 
 def master_diffract(comm, parameters):
     pmiStartID = int(parameters['pmiStartID'])

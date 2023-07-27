@@ -135,6 +135,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     # Get parameters
     calculateCompton = parameters['calculateCompton']
     numDP = int(parameters['numDP'])
+    startSlice = int(parameters["startSlice"])
     numSlices = int(parameters['numSlices'])
     pmiStartID = int(parameters['pmiStartID'])
     pmiID = pmiStartID + counter / numDP
@@ -190,7 +191,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     det.init_dp(beam)
 
     done = False
-    timeSlice = parameters["startSlice"]
+    timeSlice = startSlice
     if counter == 0:
         print("startSlice =", timeSlice)
 
