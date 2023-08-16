@@ -167,7 +167,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
 
     # Detector geometry
     px = det.get_numPix_x()
-    py = det.get_numPix_x()
+    py = det.get_numPix_y()
 
     # Input file
     inputName = os.path.join(inputDir, 'pmi_out_%07d.h5' % (pmiID))
