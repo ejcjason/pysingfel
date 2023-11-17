@@ -56,7 +56,7 @@ def setEnergyFromFile(fname, beam):
         elif 'xparams' in f['params'].keys():
             lines = [
                 l.split(' ')
-                for l in f['params/xparams'].value.decode('utf-8').split("\n")
+                for l in f['params/xparams'][()].decode('utf-8').split("\n")
             ]
             xparams = get_dict_from_lines(lines)
             photon_energy = xparams['EPH']
