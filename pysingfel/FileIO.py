@@ -16,15 +16,15 @@ def prepH5(outputName):
 
         # Write metadata
         # Package format version
-        f.create_dataset('info/package_version', data=np.string_('SingFEL v0.2.0'))
+        f.create_dataset('info/package_version', data=np.bytes_('SingFEL v0.2.0'))
         # Contact
-        f.create_dataset('info/contact', data=np.string_('Carsten Fortmann-Grote <carsten.grote@xfel.eu>'))
+        f.create_dataset('info/contact', data=np.bytes_('Carsten Fortmann-Grote <carsten.grote@xfel.eu>'))
         # Data Description
-        f.create_dataset('info/data_description', data=np.string_('This dataset contains diffraction patterns generated using SingFEL.'))
+        f.create_dataset('info/data_description', data=np.bytes_('This dataset contains diffraction patterns generated using SingFEL.'))
         # Method Description
-        f.create_dataset('info/method_description', data=np.string_('Form factors of the radiation damaged molecules are calculated in time slices. At each time slice, the coherent scattering is calculated and incoherently added to the final diffraction pattern (/data/nnnnnnn/diffr). Finally, Poissonian noise is added to the diffraction pattern (/data/nnnnnnn/data).'))
+        f.create_dataset('info/method_description', data=np.bytes_('Form factors of the radiation damaged molecules are calculated in time slices. At each time slice, the coherent scattering is calculated and incoherently added to the final diffraction pattern (/data/nnnnnnn/diffr). Finally, Poissonian noise is added to the diffraction pattern (/data/nnnnnnn/data).'))
         # Data format version
-        f.create_dataset('version', data=np.string_('0.2'))
+        f.create_dataset('version', data=np.bytes_('0.2'))
 
 
 def saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector_intensity, quaternion, det, beam):
